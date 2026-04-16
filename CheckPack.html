@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f13">
+<title>CheckPack</title>
+<style>
+  :root {
+    --bg: #0f0f13;
+    --bg2: #17171f;
+    --bg3: #1e1e2a;
+    --bg4: #252533;
+    --border: #2e2e3f;
+    --accent: #7c6ef7;
+    --accent2: #a594ff;
+    --accent-dim: rgba(124,110,247,0.15);
+    --green: #4ecb8d;
+    --green-dim: rgba(78,203,141,0.12);
+    --red: #f76e6e;
+    --red-dim: rgba(247,110,110,0.12);
+    --text: #e8e8f0;
+    --text2: #9898b0;
+    --text3: #5a5a72;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --font: 'Helvetica Neue', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* ========= HEADER ========= */
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(15,15,19,0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: env(safe-area-inset-top, 0) 0 0;
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .back-btn {
+    width: 36px; height: 36px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .back-btn:active { background: var(--bg4); }
+  .header-title {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    flex: 1;
+  }
+  .header-logo {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--accent2);
+  }
+  .header-logo span { color: var(--text2); font-weight: 400; }
+
+  /* ========= SCREENS ========= */
+  .screen { display: none; padding: 16px; padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 16px); }
+  .screen.active { display: block; }
+
+  /* ========= SCENE LIST ========= */
+  .scene-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .scene-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    position: relative;
+  }
+  .scene-card:active { background: var(--bg3); }
+  .scene-emoji {
+    width: 48px; height: 48px;
+    background: var(--accent-dim);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .scene-info { flex: 1; min-width: 0; }
+  .scene-name { font-size: 16px; font-weight: 600; }
+  .scene-meta { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .scene-arrow { color: var(--text3); font-size: 18px; }
+  .scene-delete {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: color 0.15s, background 0.15s;
+    font-size: 18px;
+  }
+  .scene-delete:active { color: var(--red); background: var(--red-dim); }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text3);
+  }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* ========= BUTTONS ========= */
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 13px 20px;
+    border-radius: var(--radius);
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    font-family: var(--font);
+    letter-spacing: -0.2px;
+    -webkit-appearance: none;
+  }
+  .btn:active { opacity: 0.8; transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+  .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(247,110,110,0.2); }
+  .btn-success { background: var(--green-dim); color: var(--green); border: 1px solid rgba(78,203,141,0.2); }
+  .btn-full { width: 100%; }
+  .btn-sm { padding: 8px 14px; font-size: 13px; border-radius: var(--radius-sm); }
+
+  .fab {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom, 16px) + 16px);
+    right: 16px;
+    width: 56px; height: 56px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(124,110,247,0.5);
+    cursor: pointer;
+    z-index: 50;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: none;
+  }
+  .fab:active { transform: scale(0.93); box-shadow: 0 2px 10px rgba(124,110,247,0.4); }
+
+  /* ========= MODAL ========= */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 200;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius) var(--radius) 0 0;
+    width: 100%;
+    max-width: 600px;
+    padding: 20px 20px calc(env(safe-area-inset-bottom, 20px) + 20px);
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    letter-spacing: -0.3px;
+  }
+  .modal-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+
+  /* ========= INPUTS ========= */
+  .input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 13px 14px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: var(--font);
+    outline: none;
+    -webkit-appearance: none;
+    transition: border-color 0.15s;
+  }
+  .input:focus { border-color: var(--accent); }
+  .input::placeholder { color: var(--text3); }
+
+  .input-row { display: flex; gap: 8px; align-items: center; }
+  .label { font-size: 13px; color: var(--text2); margin-bottom: 6px; font-weight: 500; }
+
+  .form-group { margin-bottom: 14px; }
+
+  /* ========= EMOJI PICKER ========= */
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .emoji-opt {
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: var(--bg3);
+    transition: background 0.1s;
+  }
+  .emoji-opt.selected { background: var(--accent-dim); outline: 2px solid var(--accent); }
+  .emoji-opt:active { background: var(--bg4); }
+
+  /* ========= SCENE DETAIL ========= */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+    margin-top: 20px;
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  .candidate-list { display: flex; flex-direction: column; gap: 6px; }
+  .category-group { margin-bottom: 16px; }
+  .category-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+    padding: 0 2px;
+  }
+  .candidate-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.1s;
+  }
+  .candidate-item-name { flex: 1; font-size: 14px; }
+  .candidate-item-cat { font-size: 11px; color: var(--text3); margin-top: 1px; }
+  .item-del-btn {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3);
+    cursor: pointer;
+    border-radius: 50%;
+    font-size: 16px;
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+  .item-del-btn:active { color: var(--red); background: var(--red-dim); }
+
+  .action-row { display: flex; gap: 8px; margin-top: 20px; }
+
+  /* ========= CHECKLIST SCREEN ========= */
+  .checklist-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .toggle-btn {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font);
+  }
+  .toggle-btn.active { background: var(--accent-dim); color: var(--accent2); border-color: var(--accent); }
+
+  .checklist-items { display: flex; flex-direction: column; gap: 6px; }
+
+  .check-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 13px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.2s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .check-item:active { background: var(--bg3); }
+  .check-item.checked {
+    opacity: 0.45;
+  }
+
+  .check-circle {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    background: transparent;
+    color: transparent;
+    font-size: 13px;
+  }
+  .check-item.checked .check-circle {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+  }
+  .check-item-info { flex: 1; min-width: 0; }
+  .check-item-name { font-size: 15px; transition: text-decoration 0.1s; }
+  .check-item.checked .check-item-name { text-decoration: line-through; color: var(--text3); }
+  .check-item-cat { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .check-del-btn {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3);
+    font-size: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: color 0.15s, background 0.15s;
+  }
+  .check-del-btn:active { color: var(--red); background: var(--red-dim); }
+
+  .progress-bar-wrap {
+    background: var(--bg3);
+    border-radius: 4px;
+    height: 6px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--green);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+  .progress-text {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 10px;
+    text-align: right;
+  }
+
+  .category-group-check { margin-bottom: 18px; }
+  .category-group-check .category-label { margin-bottom: 8px; }
+
+  /* ========= CANDIDATE SELECT MODAL ========= */
+  .candidate-select-list { display: flex; flex-direction: column; gap: 6px; max-height: 55vh; overflow-y: auto; }
+  .candidate-select-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .candidate-select-item.added { opacity: 0.4; pointer-events: none; }
+  .candidate-select-item:active { background: var(--bg4); }
+  .candidate-select-item .item-check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    color: transparent;
+    transition: all 0.15s;
+  }
+  .candidate-select-item.selected-tmp .item-check {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .modal-scroll { max-height: 60vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+  .select-cat-group { margin-bottom: 14px; }
+  .divider { height: 1px; background: var(--border); margin: 12px 0; }
+
+  /* ========= TAGS ========= */
+  .tag {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--accent-dim);
+    color: var(--accent2);
+  }
+
+  /* ========= ALERT ========= */
+  .confirm-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 300;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .confirm-overlay.active { display: flex; }
+  .confirm-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 20px 16px;
+    width: 100%;
+    max-width: 320px;
+    animation: fadeScale 0.2s ease;
+  }
+  @keyframes fadeScale {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .confirm-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .confirm-msg { font-size: 14px; color: var(--text2); line-height: 1.5; margin-bottom: 20px; }
+  .confirm-btns { display: flex; gap: 8px; }
+  .confirm-btns .btn { flex: 1; }
+
+  /* ========= TOAST ========= */
+  .toast {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom, 16px) + 80px);
+    left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 10px 20px;
+    font-size: 13px;
+    color: var(--text);
+    z-index: 400;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ========= MISC ========= */
+  .mt8 { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .flex-row { display: flex; gap: 8px; }
+  .checked-section-label {
+    font-size: 12px; color: var(--text3); font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 8px 0 6px;
+    border-top: 1px solid var(--border);
+    margin-top: 10px;
+  }
+  select.input {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235a5a72' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="app-header">
+  <div class="header-inner">
+    <div class="back-btn" id="backBtn" onclick="goBack()">‹</div>
+    <div class="header-title" id="headerTitle"><span class="header-logo">Check<span>Pack</span></span></div>
+  </div>
+</div>
+
+<!-- SCREEN 1: シーン一覧 -->
+<div class="screen active" id="screenScenes">
+  <div id="sceneList" class="scene-grid"></div>
+  <button class="fab" onclick="openAddSceneModal()">＋</button>
+</div>
+
+<!-- SCREEN 2: シーン詳細（候補管理） -->
+<div class="screen" id="screenDetail">
+  <div class="section-header" style="margin-top:0">
+    <div class="section-title">候補アイテム</div>
+    <button class="btn btn-primary btn-sm" onclick="openAddCandidateModal()">＋ 追加</button>
+  </div>
+  <div id="candidateList" class="candidate-list"></div>
+  <div class="action-row">
+    <button class="btn btn-success btn-full" onclick="openChecklistSetup()">✓ チェックリストを作る</button>
+  </div>
+</div>
+
+<!-- SCREEN 3: チェックリスト -->
+<div class="screen" id="screenChecklist">
+  <div class="checklist-toolbar">
+    <button class="toggle-btn active" id="toggleGroup" onclick="toggleGrouping()">カテゴリ別</button>
+    <button class="toggle-btn" id="toggleFlat" onclick="toggleGrouping()">フラット</button>
+    <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="openAddCandidateToChecklist()">＋ 追加</button>
+  </div>
+  <div class="progress-text" id="progressText"></div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  <div id="checklistItems" class="checklist-items"></div>
+  <div class="action-row" style="margin-top:16px">
+    <button class="btn btn-secondary" onclick="resetChecks()" style="flex:1">リセット</button>
+    <button class="btn btn-danger" onclick="clearChecklist()" style="flex:1">クリア</button>
+  </div>
+</div>
+
+<!-- ========= MODALS ========= -->
+
+<!-- シーン追加モーダル -->
+<div class="modal-overlay" id="modalAddScene">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">シーンを追加</div>
+    <div class="form-group">
+      <div class="label">シーン名</div>
+      <input class="input" id="inputSceneName" type="text" placeholder="例：旅行、週末の買い物" maxlength="30">
+    </div>
+    <div class="form-group">
+      <div class="label">アイコン</div>
+      <div class="emoji-grid" id="emojiPicker"></div>
+    </div>
+    <div class="flex-row mt8">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modalAddScene')">キャンセル</button>
+      <button class="btn btn-primary" style="flex:1" onclick="addScene()">追加</button>
+    </div>
+  </div>
+</div>
+
+<!-- 候補アイテム追加モーダル -->
+<div class="modal-overlay" id="modalAddCandidate">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">候補を追加</div>
+    <div class="form-group">
+      <div class="label">アイテム名</div>
+      <input class="input" id="inputCandidateName" type="text" placeholder="例：パスポート、充電器" maxlength="40">
+    </div>
+    <div class="form-group">
+      <div class="label">カテゴリ（任意）</div>
+      <input class="input" id="inputCandidateCat" type="text" placeholder="例：書類、電子機器、衣類" maxlength="20" list="catSuggestions">
+      <datalist id="catSuggestions"></datalist>
+    </div>
+    <div class="flex-row mt8">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modalAddCandidate')">キャンセル</button>
+      <button class="btn btn-primary" style="flex:1" onclick="addCandidate()">追加</button>
+    </div>
+  </div>
+</div>
+
+<!-- チェックリスト作成セットアップモーダル -->
+<div class="modal-overlay" id="modalChecklistSetup">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">チェックリストを作る</div>
+    <div class="form-group">
+      <div class="label">前回のリストを再利用しますか？</div>
+      <div class="flex-row">
+        <button class="btn btn-secondary" id="btnNoReuse" onclick="selectReuse(false)" style="flex:1">新しく作る</button>
+        <button class="btn btn-secondary" id="btnReuse" onclick="selectReuse(true)" style="flex:1">前回を使う</button>
+      </div>
+    </div>
+    <div class="mt12">
+      <button class="btn btn-success btn-full" onclick="startChecklist()">▶ スタート</button>
+    </div>
+  </div>
+</div>
+
+<!-- チェックリストへ追加モーダル -->
+<div class="modal-overlay" id="modalAddToChecklist">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">アイテムを追加</div>
+    <div class="modal-scroll" id="candidateSelectList"></div>
+    <div class="divider"></div>
+    <div class="form-group">
+      <div class="label">手動で追加</div>
+      <div class="input-row">
+        <input class="input" id="inputManualItem" type="text" placeholder="アイテム名" style="flex:1" maxlength="40">
+        <input class="input" id="inputManualCat" type="text" placeholder="カテゴリ" style="width:110px" maxlength="20">
+      </div>
+    </div>
+    <div class="flex-row mt8">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modalAddToChecklist')">閉じる</button>
+      <button class="btn btn-primary" style="flex:1" onclick="addManualItem()">手動追加</button>
+    </div>
+  </div>
+</div>
+
+<!-- 確認ダイアログ -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirmTitle"></div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-btns">
+      <button class="btn btn-secondary" id="confirmCancel">キャンセル</button>
+      <button class="btn btn-danger" id="confirmOK">削除</button>
+    </div>
+  </div>
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ========= STATE =========
+var state = {
+  scenes: [],
+  currentSceneId: null,
+  checklist: [],
+  checklistGrouped: true,
+  reuseChecklist: false
+};
+
+var EMOJIS = ['✈️','🛍️','🏕️','🎒','🏖️','🏔️','🚗','🚂','🎉','💼','🏠','🎓','⚽','🎵','🍽️','💊','🐾','📚','🏋️','🌿'];
+
+// ========= STORAGE =========
+function save() {
+  try {
+    localStorage.setItem('checkpack_v1', JSON.stringify(state));
+  } catch(e) {}
+}
+
+function load() {
+  try {
+    var raw = localStorage.getItem('checkpack_v1');
+    if (raw) {
+      var loaded = JSON.parse(raw);
+      state.scenes = loaded.scenes || [];
+      state.checklist = loaded.checklist || [];
+      state.currentSceneId = loaded.currentSceneId || null;
+    }
+  } catch(e) {}
+}
+
+// ========= HELPERS =========
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2000);
+}
+
+function showConfirm(title, msg, onOK) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmOverlay').classList.add('active');
+  document.getElementById('confirmOK').onclick = function() {
+    closeConfirm();
+    onOK();
+  };
+  document.getElementById('confirmCancel').onclick = closeConfirm;
+}
+
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('active');
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('active');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+function getCurrentScene() {
+  return state.scenes.find(function(s) { return s.id === state.currentSceneId; }) || null;
+}
+
+function getCandidateCategories(scene) {
+  var cats = [];
+  scene.candidates.forEach(function(c) {
+    var cat = c.category || '未分類';
+    if (cats.indexOf(cat) === -1) cats.push(cat);
+  });
+  return cats;
+}
+
+// ========= NAVIGATION =========
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function goBack() {
+  var cur = document.querySelector('.screen.active').id;
+  if (cur === 'screenDetail') { goHome(); }
+  else if (cur === 'screenChecklist') { goToDetail(); }
+}
+
+function goHome() {
+  showScreen('screenScenes');
+  document.getElementById('backBtn').style.display = 'none';
+  document.getElementById('headerTitle').innerHTML = '<span class="header-logo">Check<span>Pack</span></span>';
+  renderSceneList();
+}
+
+function goToDetail() {
+  var scene = getCurrentScene();
+  if (!scene) return;
+  showScreen('screenDetail');
+  document.getElementById('backBtn').style.display = 'flex';
+  document.getElementById('headerTitle').textContent = scene.emoji + ' ' + scene.name;
+  renderCandidateList();
+}
+
+// ========= SCENE LIST =========
+function renderSceneList() {
+  var el = document.getElementById('sceneList');
+  if (state.scenes.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>シーンがまだないよ！<br>右下の＋ボタンから追加してね</p></div>';
+    return;
+  }
+  el.innerHTML = '';
+  state.scenes.forEach(function(scene) {
+    var div = document.createElement('div');
+    div.className = 'scene-card';
+    var candCount = scene.candidates ? scene.candidates.length : 0;
+    div.innerHTML =
+      '<div class="scene-emoji">' + scene.emoji + '</div>' +
+      '<div class="scene-info">' +
+        '<div class="scene-name">' + esc(scene.name) + '</div>' +
+        '<div class="scene-meta">候補 ' + candCount + ' 件</div>' +
+      '</div>' +
+      '<div class="scene-arrow">›</div>' +
+      '<div class="scene-delete" data-id="' + scene.id + '">🗑</div>';
+    div.querySelector('.scene-arrow').onclick = function() { enterScene(scene.id); };
+    div.querySelector('.scene-emoji').onclick = function() { enterScene(scene.id); };
+    div.querySelector('.scene-info').onclick = function() { enterScene(scene.id); };
+    div.querySelector('.scene-delete').onclick = function(e) {
+      e.stopPropagation();
+      showConfirm('シーンを削除', '「' + scene.name + '」を削除しますか？', function() {
+        state.scenes = state.scenes.filter(function(s) { return s.id !== scene.id; });
+        save();
+        renderSceneList();
+        showToast('削除したよ');
+      });
+    };
+    el.appendChild(div);
+  });
+}
+
+function enterScene(id) {
+  state.currentSceneId = id;
+  goToDetail();
+}
+
+// ========= ADD SCENE MODAL =========
+var selectedEmoji = '✈️';
+
+function openAddSceneModal() {
+  document.getElementById('inputSceneName').value = '';
+  selectedEmoji = EMOJIS[0];
+  renderEmojiPicker();
+  openModal('modalAddScene');
+  setTimeout(function() { document.getElementById('inputSceneName').focus(); }, 300);
+}
+
+function renderEmojiPicker() {
+  var grid = document.getElementById('emojiPicker');
+  grid.innerHTML = '';
+  EMOJIS.forEach(function(em) {
+    var div = document.createElement('div');
+    div.className = 'emoji-opt' + (em === selectedEmoji ? ' selected' : '');
+    div.textContent = em;
+    div.onclick = function() {
+      selectedEmoji = em;
+      document.querySelectorAll('.emoji-opt').forEach(function(d) { d.classList.remove('selected'); });
+      div.classList.add('selected');
+    };
+    grid.appendChild(div);
+  });
+}
+
+function addScene() {
+  var name = document.getElementById('inputSceneName').value.trim();
+  if (!name) { showToast('シーン名を入力してね'); return; }
+  state.scenes.push({ id: uid(), name: name, emoji: selectedEmoji, candidates: [], lastChecklist: [] });
+  save();
+  closeModal('modalAddScene');
+  renderSceneList();
+  showToast('シーンを追加したよ！');
+}
+
+// ========= CANDIDATE LIST =========
+function renderCandidateList() {
+  var scene = getCurrentScene();
+  var el = document.getElementById('candidateList');
+  if (!scene || scene.candidates.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><p>候補がまだないよ！<br>「＋ 追加」から候補を登録してね</p></div>';
+    return;
+  }
+
+  // カテゴリ別にグループ化
+  var groups = {};
+  scene.candidates.forEach(function(c) {
+    var cat = c.category || '未分類';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(c);
+  });
+
+  el.innerHTML = '';
+  Object.keys(groups).forEach(function(cat) {
+    var groupDiv = document.createElement('div');
+    groupDiv.className = 'category-group';
+    groupDiv.innerHTML = '<div class="category-label">' + esc(cat) + '</div>';
+    groups[cat].forEach(function(cand) {
+      var item = document.createElement('div');
+      item.className = 'candidate-item';
+      item.innerHTML =
+        '<div style="flex:1"><div class="candidate-item-name">' + esc(cand.name) + '</div></div>' +
+        '<div class="item-del-btn" data-id="' + cand.id + '">✕</div>';
+      item.querySelector('.item-del-btn').onclick = function() {
+        showConfirm('候補を削除', '「' + cand.name + '」を削除しますか？', function() {
+          scene.candidates = scene.candidates.filter(function(x) { return x.id !== cand.id; });
+          save();
+          renderCandidateList();
+          showToast('削除したよ');
+        });
+      };
+      groupDiv.appendChild(item);
+    });
+    el.appendChild(groupDiv);
+  });
+}
+
+function updateCatSuggestions() {
+  var scene = getCurrentScene();
+  if (!scene) return;
+  var cats = [];
+  scene.candidates.forEach(function(c) {
+    if (c.category && cats.indexOf(c.category) === -1) cats.push(c.category);
+  });
+  var dl = document.getElementById('catSuggestions');
+  dl.innerHTML = '';
+  cats.forEach(function(cat) {
+    var opt = document.createElement('option');
+    opt.value = cat;
+    dl.appendChild(opt);
+  });
+}
+
+function openAddCandidateModal() {
+  document.getElementById('inputCandidateName').value = '';
+  document.getElementById('inputCandidateCat').value = '';
+  updateCatSuggestions();
+  openModal('modalAddCandidate');
+  setTimeout(function() { document.getElementById('inputCandidateName').focus(); }, 300);
+}
+
+function addCandidate() {
+  var name = document.getElementById('inputCandidateName').value.trim();
+  var cat = document.getElementById('inputCandidateCat').value.trim();
+  if (!name) { showToast('アイテム名を入力してね'); return; }
+  var scene = getCurrentScene();
+  if (!scene) return;
+  scene.candidates.push({ id: uid(), name: name, category: cat });
+  save();
+  closeModal('modalAddCandidate');
+  renderCandidateList();
+  showToast('候補を追加したよ！');
+}
+
+// ========= CHECKLIST SETUP =========
+var reuseSelected = false;
+
+function openChecklistSetup() {
+  var scene = getCurrentScene();
+  if (!scene || scene.candidates.length === 0) {
+    showToast('候補を追加してからね！');
+    return;
+  }
+  reuseSelected = false;
+  document.getElementById('btnNoReuse').className = 'btn btn-primary';
+  document.getElementById('btnReuse').className = 'btn btn-secondary';
+  // 前回リストがない場合は再利用ボタンを非表示
+  var hasLast = scene.lastChecklist && scene.lastChecklist.length > 0;
+  document.getElementById('btnReuse').style.display = hasLast ? '' : 'none';
+  openModal('modalChecklistSetup');
+}
+
+function selectReuse(val) {
+  reuseSelected = val;
+  document.getElementById('btnNoReuse').className = val ? 'btn btn-secondary' : 'btn btn-primary';
+  document.getElementById('btnReuse').className = val ? 'btn btn-primary' : 'btn btn-secondary';
+}
+
+function startChecklist() {
+  var scene = getCurrentScene();
+  if (!scene) return;
+  if (reuseSelected && scene.lastChecklist && scene.lastChecklist.length > 0) {
+    // 前回リストを再利用（チェックだけリセット）
+    state.checklist = scene.lastChecklist.map(function(item) {
+      return { id: uid(), name: item.name, category: item.category, checked: false };
+    });
+  } else {
+    // 全候補を初期リストとしてセット（チェックなし）
+    state.checklist = scene.candidates.map(function(c) {
+      return { id: uid(), name: c.name, category: c.category, checked: false };
+    });
+  }
+  closeModal('modalChecklistSetup');
+  showChecklistScreen();
+}
+
+function showChecklistScreen() {
+  showScreen('screenChecklist');
+  var scene = getCurrentScene();
+  document.getElementById('backBtn').style.display = 'flex';
+  document.getElementById('headerTitle').textContent = (scene ? scene.emoji + ' ' : '') + 'チェックリスト';
+  state.checklistGrouped = true;
+  document.getElementById('toggleGroup').className = 'toggle-btn active';
+  document.getElementById('toggleFlat').className = 'toggle-btn';
+  renderChecklist();
+}
+
+// ========= CHECKLIST =========
+function toggleGrouping() {
+  state.checklistGrouped = !state.checklistGrouped;
+  document.getElementById('toggleGroup').className = 'toggle-btn' + (state.checklistGrouped ? ' active' : '');
+  document.getElementById('toggleFlat').className = 'toggle-btn' + (!state.checklistGrouped ? ' active' : '');
+  renderChecklist();
+}
+
+function renderChecklist() {
+  var el = document.getElementById('checklistItems');
+  var total = state.checklist.length;
+  var done = state.checklist.filter(function(i) { return i.checked; }).length;
+  document.getElementById('progressText').textContent = done + ' / ' + total + ' 完了';
+  document.getElementById('progressBar').style.width = (total === 0 ? 0 : Math.round(done / total * 100)) + '%';
+
+  el.innerHTML = '';
+
+  var unchecked = state.checklist.filter(function(i) { return !i.checked; });
+  var checked = state.checklist.filter(function(i) { return i.checked; });
+
+  if (state.checklistGrouped) {
+    renderGrouped(el, unchecked);
+  } else {
+    renderFlat(el, unchecked);
+  }
+
+  if (checked.length > 0) {
+    var label = document.createElement('div');
+    label.className = 'checked-section-label';
+    label.textContent = '完了済み (' + checked.length + ')';
+    el.appendChild(label);
+    renderFlat(el, checked);
+  }
+}
+
+function renderFlat(container, items) {
+  items.forEach(function(item) {
+    container.appendChild(makeCheckItem(item));
+  });
+}
+
+function renderGrouped(container, items) {
+  var groups = {};
+  var order = [];
+  items.forEach(function(item) {
+    var cat = item.category || '未分類';
+    if (!groups[cat]) { groups[cat] = []; order.push(cat); }
+    groups[cat].push(item);
+  });
+  order.forEach(function(cat) {
+    var groupDiv = document.createElement('div');
+    groupDiv.className = 'category-group-check';
+    groupDiv.innerHTML = '<div class="category-label">' + esc(cat) + '</div>';
+    groups[cat].forEach(function(item) {
+      groupDiv.appendChild(makeCheckItem(item));
+    });
+    container.appendChild(groupDiv);
+  });
+}
+
+function makeCheckItem(item) {
+  var div = document.createElement('div');
+  div.className = 'check-item' + (item.checked ? ' checked' : '');
+  div.innerHTML =
+    '<div class="check-circle">' + (item.checked ? '✓' : '') + '</div>' +
+    '<div class="check-item-info">' +
+      '<div class="check-item-name">' + esc(item.name) + '</div>' +
+      (item.category ? '<div class="check-item-cat">' + esc(item.category) + '</div>' : '') +
+    '</div>' +
+    '<div class="check-del-btn">✕</div>';
+
+  div.querySelector('.check-circle').onclick = function(e) {
+    e.stopPropagation();
+    toggleCheck(item.id);
+  };
+  div.querySelector('.check-item-name').onclick = function() { toggleCheck(item.id); };
+  div.querySelector('.check-item-info').onclick = function() { toggleCheck(item.id); };
+  div.querySelector('.check-del-btn').onclick = function(e) {
+    e.stopPropagation();
+    state.checklist = state.checklist.filter(function(i) { return i.id !== item.id; });
+    saveChecklistToScene();
+    renderChecklist();
+  };
+  return div;
+}
+
+function toggleCheck(id) {
+  var item = state.checklist.find(function(i) { return i.id === id; });
+  if (item) {
+    item.checked = !item.checked;
+    saveChecklistToScene();
+    renderChecklist();
+  }
+}
+
+function saveChecklistToScene() {
+  var scene = getCurrentScene();
+  if (scene) {
+    scene.lastChecklist = state.checklist.map(function(i) {
+      return { name: i.name, category: i.category };
+    });
+    save();
+  }
+}
+
+function resetChecks() {
+  state.checklist.forEach(function(i) { i.checked = false; });
+  saveChecklistToScene();
+  renderChecklist();
+  showToast('チェックをリセットしたよ！');
+}
+
+function clearChecklist() {
+  showConfirm('チェックリストをクリア', 'リストの全アイテムを削除しますか？', function() {
+    state.checklist = [];
+    saveChecklistToScene();
+    renderChecklist();
+    showToast('クリアしたよ！');
+  });
+}
+
+// ========= ADD TO CHECKLIST =========
+function openAddCandidateToChecklist() {
+  var scene = getCurrentScene();
+  var el = document.getElementById('candidateSelectList');
+  el.innerHTML = '';
+  document.getElementById('inputManualItem').value = '';
+  document.getElementById('inputManualCat').value = '';
+
+  if (scene && scene.candidates.length > 0) {
+    var groups = {};
+    var order = [];
+    scene.candidates.forEach(function(c) {
+      var cat = c.category || '未分類';
+      if (!groups[cat]) { groups[cat] = []; order.push(cat); }
+      groups[cat].push(c);
+    });
+
+    order.forEach(function(cat) {
+      var gDiv = document.createElement('div');
+      gDiv.className = 'select-cat-group';
+      gDiv.innerHTML = '<div class="category-label" style="margin-bottom:6px">' + esc(cat) + '</div>';
+      groups[cat].forEach(function(cand) {
+        var already = state.checklist.some(function(i) { return i.name === cand.name; });
+        var item = document.createElement('div');
+        item.className = 'candidate-select-item' + (already ? ' added' : '');
+        item.innerHTML =
+          '<div class="item-check">' + (already ? '✓' : '') + '</div>' +
+          '<div style="flex:1"><div style="font-size:14px">' + esc(cand.name) + '</div></div>';
+        if (!already) {
+          item.onclick = function() {
+            state.checklist.push({ id: uid(), name: cand.name, category: cand.category, checked: false });
+            saveChecklistToScene();
+            item.classList.add('added');
+            item.querySelector('.item-check').textContent = '✓';
+            renderChecklist();
+            showToast(cand.name + ' を追加！');
+          };
+        }
+        gDiv.appendChild(item);
+      });
+      el.appendChild(gDiv);
+    });
+  } else {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">候補がないよ（手動追加できるよ）</div>';
+  }
+
+  openModal('modalAddToChecklist');
+}
+
+function addManualItem() {
+  var name = document.getElementById('inputManualItem').value.trim();
+  var cat = document.getElementById('inputManualCat').value.trim();
+  if (!name) { showToast('アイテム名を入力してね'); return; }
+  state.checklist.push({ id: uid(), name: name, category: cat, checked: false });
+  saveChecklistToScene();
+  renderChecklist();
+  document.getElementById('inputManualItem').value = '';
+  document.getElementById('inputManualCat').value = '';
+  showToast(name + ' を追加！');
+}
+
+// ========= UTILS =========
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// モーダル外タップで閉じる
+document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) {
+      overlay.classList.remove('active');
+    }
+  });
+});
+
+// Enter キー対応
+document.getElementById('inputSceneName').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') addScene();
+});
+document.getElementById('inputCandidateName').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { document.getElementById('inputCandidateCat').focus(); }
+});
+document.getElementById('inputCandidateCat').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') addCandidate();
+});
+document.getElementById('inputManualItem').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { document.getElementById('inputManualCat').focus(); }
+});
+
+// ========= INIT =========
+load();
+renderSceneList();
+</script>
+</body>
+</html>
