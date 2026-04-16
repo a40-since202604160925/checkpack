@@ -129,6 +129,27 @@
   }
   .scene-delete:active { color: var(--red); background: var(--red-dim); }
 
+  .scene-edit {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: color 0.15s, background 0.15s;
+    font-size: 16px;
+  }
+  .scene-edit:active { color: var(--accent2); background: var(--accent-dim); }
+  .scene-copy {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: color 0.15s, background 0.15s;
+    font-size: 16px;
+  }
+  .scene-copy:active { color: var(--green); background: var(--green-dim); }
+
   .empty-state {
     text-align: center;
     padding: 48px 24px;
@@ -587,6 +608,26 @@
   </div>
 </div>
 
+<!-- シーン編集モーダル -->
+<div class="modal-overlay" id="modalEditScene">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">シーンを編集</div>
+    <div class="form-group">
+      <div class="label">シーン名</div>
+      <input class="input" id="inputEditSceneName" type="text" placeholder="例：旅行、週末の買い物" maxlength="30">
+    </div>
+    <div class="form-group">
+      <div class="label">アイコン</div>
+      <div class="emoji-grid" id="emojiPickerEdit"></div>
+    </div>
+    <div class="flex-row mt8">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('modalEditScene')">キャンセル</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveEditScene()">保存</button>
+    </div>
+  </div>
+</div>
+
 <!-- 候補アイテム追加モーダル -->
 <div class="modal-overlay" id="modalAddCandidate">
   <div class="modal">
@@ -788,10 +829,20 @@ function renderSceneList() {
         '<div class="scene-meta">候補 ' + candCount + ' 件</div>' +
       '</div>' +
       '<div class="scene-arrow">›</div>' +
+      '<div class="scene-edit" data-id="' + scene.id + '" title="編集">✎</div>' +
+      '<div class="scene-copy" data-id="' + scene.id + '" title="コピー">⧉</div>' +
       '<div class="scene-delete" data-id="' + scene.id + '">🗑</div>';
     div.querySelector('.scene-arrow').onclick = function() { enterScene(scene.id); };
     div.querySelector('.scene-emoji').onclick = function() { enterScene(scene.id); };
     div.querySelector('.scene-info').onclick = function() { enterScene(scene.id); };
+    div.querySelector('.scene-edit').onclick = function(e) {
+      e.stopPropagation();
+      openEditSceneModal(scene.id);
+    };
+    div.querySelector('.scene-copy').onclick = function(e) {
+      e.stopPropagation();
+      copyScene(scene.id);
+    };
     div.querySelector('.scene-delete').onclick = function(e) {
       e.stopPropagation();
       showConfirm('シーンを削除', '「' + scene.name + '」を削除しますか？', function() {
@@ -1161,7 +1212,70 @@ function addManualItem() {
   showToast(name + ' を追加！');
 }
 
-// ========= UTILS =========
+// ========= EDIT SCENE =========
+var editingSceneId = null;
+var selectedEmojiEdit = '✈️';
+
+function openEditSceneModal(id) {
+  var scene = state.scenes.find(function(s) { return s.id === id; });
+  if (!scene) return;
+  editingSceneId = id;
+  selectedEmojiEdit = scene.emoji;
+  document.getElementById('inputEditSceneName').value = scene.name;
+  renderEmojiPickerEdit();
+  openModal('modalEditScene');
+  setTimeout(function() { document.getElementById('inputEditSceneName').focus(); }, 300);
+}
+
+function renderEmojiPickerEdit() {
+  var grid = document.getElementById('emojiPickerEdit');
+  grid.innerHTML = '';
+  EMOJIS.forEach(function(em) {
+    var div = document.createElement('div');
+    div.className = 'emoji-opt' + (em === selectedEmojiEdit ? ' selected' : '');
+    div.textContent = em;
+    div.onclick = function() {
+      selectedEmojiEdit = em;
+      document.querySelectorAll('#emojiPickerEdit .emoji-opt').forEach(function(d) { d.classList.remove('selected'); });
+      div.classList.add('selected');
+    };
+    grid.appendChild(div);
+  });
+}
+
+function saveEditScene() {
+  var name = document.getElementById('inputEditSceneName').value.trim();
+  if (!name) { showToast('シーン名を入力してね'); return; }
+  var scene = state.scenes.find(function(s) { return s.id === editingSceneId; });
+  if (!scene) return;
+  scene.name = name;
+  scene.emoji = selectedEmojiEdit;
+  save();
+  closeModal('modalEditScene');
+  renderSceneList();
+  showToast('シーンを更新したよ！');
+}
+
+// ========= COPY SCENE =========
+function copyScene(id) {
+  var scene = state.scenes.find(function(s) { return s.id === id; });
+  if (!scene) return;
+  var newScene = {
+    id: uid(),
+    name: scene.name + ' (コピー)',
+    emoji: scene.emoji,
+    candidates: scene.candidates.map(function(c) {
+      return { id: uid(), name: c.name, category: c.category };
+    }),
+    lastChecklist: scene.lastChecklist ? scene.lastChecklist.map(function(i) {
+      return { name: i.name, category: i.category };
+    }) : []
+  };
+  state.scenes.push(newScene);
+  save();
+  renderSceneList();
+  showToast('シーンをコピーしたよ！');
+}
 function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -1187,6 +1301,10 @@ document.getElementById('inputCandidateCat').addEventListener('keydown', functio
 });
 document.getElementById('inputManualItem').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') { document.getElementById('inputManualCat').focus(); }
+});
+
+document.getElementById('inputEditSceneName').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') saveEditScene();
 });
 
 // ========= INIT =========
